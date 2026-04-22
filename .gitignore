@@ -1,0 +1,4 @@
+mock_documents
+*.svg
+venv
+uploads
