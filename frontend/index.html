@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plum Claims Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside>
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg>
+                PlumAI
+            </div>
+            <nav>
+                <ul>
+                    <li class="active" onclick="showSection('dashboard')">
+                        Dashboard
+                    </li>
+                    <li onclick="showSection('new-claim')">
+                        Submit Claim
+                    </li>
+                    <li onclick="showSection('history')">
+                        History
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Area -->
+        <main>
+            <!-- Section: Dashboard -->
+            <section id="dashboard-section">
+                <header>
+                    <div>
+                        <h1>Claims Overview</h1>
+                        <p>Welcome back. Here is your current audit summary.</p>
+                    </div>
+                </header>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Total Claims</h3>
+                        <div class="value" id="total-claims">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Approval Rate</h3>
+                        <div class="value" id="approval-rate">0%</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Auto-Processed</h3>
+                        <div class="value" id="auto-processed">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Payout</h3>
+                        <div class="value" id="total-payout">₹0</div>
+                    </div>
+                </div>
+
+                <h2>Recent Claims</h2>
+                <div id="recent-claims-list">
+                    <!-- History Table Injected Here -->
+                </div>
+            </section>
+
+            <!-- Section: New Claim -->
+            <section id="new-claim-section" style="display: none;">
+                <header>
+                    <h1>Submit New Claim</h1>
+                    <p>Upload medical documents as images or PDFs.</p>
+                </header>
+
+                <div id="claim-form">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                        <div>
+                            <label>Member ID</label>
+                            <input type="text" id="member-id" placeholder="EMP001">
+                        </div>
+                        <div>
+                            <label>Claim Category</label>
+                            <select id="claim-category">
+                                <option value="CONSULTATION">Consultation (OPD)</option>
+                                <option value="DIAGNOSTIC">Diagnostic (Scans/Lab)</option>
+                                <option value="HOSPITALIZATION">Hospitalization (IPD)</option>
+                                <option value="PHARMACY">Pharmacy</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                        <div>
+                            <label>Claimed Amount (₹)</label>
+                            <input type="number" id="claimed-amount" placeholder="1500">
+                        </div>
+                        <div>
+                            <label>Treatment Date</label>
+                            <input type="date" id="treatment-date">
+                        </div>
+                    </div>
+
+                    <div class="upload-container" id="dropzone" onclick="document.getElementById('file-input').click()">
+                        <div class="upload-icon">↑</div>
+                        <h3>Upload Documents</h3>
+                        <p>Drag & drop or click to select files</p>
+                        <p id="file-count" style="margin-top: 8px; color: var(--primary); font-weight: 500;"></p>
+                        <input type="file" id="file-input" multiple style="display: none;" onchange="handleFiles(this.files)">
+                    </div>
+
+                    <button class="btn btn-primary" onclick="submitClaim()">Start Intelligence Pipeline</button>
+                </div>
+
+                <!-- Pipeline Result (shown after submit) -->
+                <div id="pipeline-result" style="display: none; margin-top: 48px;">
+                    <h2>Processing Pipeline</h2>
+                    <div id="pipeline-steps">
+                        <div class="agent-step" id="step-1">1. OCR & Validation (Agent 1)</div>
+                        <div class="agent-step" id="step-2">2. Document Parsing (Agent 2)</div>
+                        <div class="agent-step" id="step-3">3. Policy Checking (Agent 3)</div>
+                        <div class="agent-step" id="step-4">4. Fraud Detection (Agent 4)</div>
+                        <div class="agent-step" id="step-5">5. Final Decision (Agent 5)</div>
+                    </div>
+
+                    <div id="final-verdict" style="display: none; margin-top: 32px; padding: 32px; border-radius: 24px; text-align: center;">
+                        <h1 id="verdict-text"></h1>
+                        <p id="verdict-reason" style="margin-top: 8px; font-size: 18px;"></p>
+                        <div style="font-size: 48px; font-weight: 800; margin: 24px 0;" id="verdict-amount"></div>
+                        <button class="btn btn-primary" onclick="window.location.reload()">Process Another Claim</button>
+                    </div>
+                </div>
+            </section>
+
+             <!-- Section: History -->
+             <section id="history-section" style="display: none;">
+                <header>
+                    <h1>Processing History</h1>
+                    <p>Browse the full audit trail of past claims.</p>
+                </header>
+                <div id="history-container"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
