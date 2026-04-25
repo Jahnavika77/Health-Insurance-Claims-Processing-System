@@ -3,3 +3,5 @@ mock_documents
 venv
 uploads
 .env
+env/
+

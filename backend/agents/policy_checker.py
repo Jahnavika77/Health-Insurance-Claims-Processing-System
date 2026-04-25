@@ -57,8 +57,16 @@ class PolicyChecker:
         if not member:
             return {"status": "FAIL", "reason": f"Member ID [{member_id}] not found in our records. Please verify your ID or contact HR."}
 
-        join_date = datetime.strptime(member["join_date"], "%Y-%m-%d")
-        treatment_date = datetime.strptime(treatment_date_str, "%Y-%m-%d")
+        def parse_date(date_string):
+            for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%d/%m/%Y", "%d-%m-%Y"):
+                try:
+                    return datetime.strptime(date_string, fmt)
+                except ValueError:
+                    pass
+            raise ValueError(f"time data '{date_string}' does not match any known format")
+
+        join_date = parse_date(member["join_date"])
+        treatment_date = parse_date(treatment_date_str)
         days_since_joining = (treatment_date - join_date).days
 
         # Initial 30-day waiting period
