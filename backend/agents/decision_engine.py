@@ -51,10 +51,13 @@ class DecisionEngine:
         if financial_calc:
             final_amount = financial_calc.get("final_approved_amount", 0.0)
             claimed = financial_calc.get("claimed_amount", 0.0)
+            exceeds_sublimit = financial_calc.get("exceeds_sublimit", False)
             
-            if final_amount < claimed:
+            if exceeds_sublimit:
                 verdict = "PARTIAL"
-                reason = "Partial approval due to copay, discounts, or sub-limits."
+                reason = f"Partial approval: claimed amount exceeds the category sub-limit of ₹{financial_calc.get('sub_limit', 0)}. Approved ₹{final_amount}."
+            elif final_amount < claimed:
+                reason = "Approved after standard policy deductions (copay/network discount)."
             
         # 4. Confidence adjustment based on fraud score
         confidence = 1.0 - (fraud_score * 0.5) # Reducing confidence slightly if fraud score is > 0
