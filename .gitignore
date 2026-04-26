@@ -6,3 +6,11 @@ uploads
 env/
 
 backend/app/__pycache__
+backend/traces
+backend/env/
+backend/uploads/
+backend/.env
+backend/_pycache_/
+backend/database/_pycache_/
+backend/services/_pycache_/
+*.pyc

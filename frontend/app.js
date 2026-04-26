@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:8000";
+const API_BASE = "https://plum-backend-06ab.onrender.com";
 let selectedFiles = [];
 let pipelinePollInterval;
 const AGENT_STEP_COUNT = 5;
