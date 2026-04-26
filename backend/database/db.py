@@ -28,16 +28,21 @@ class ClaimHistory(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 def init_db():
-    Base.metadata.create_all(bind=engine)
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("✅ Database tables initialized.")
+    except Exception as e:
+        print(f"⚠️  Database Initialization Warning: {e}")
+        print("Ensure your DATABASE_URL is correct in .env")
 
 def get_history(member_id: str = ""):
-    db = SessionLocal()
     try:
+        db = SessionLocal()
         query = db.query(ClaimHistory)
         if member_id:
             query = query.filter(ClaimHistory.member_id == member_id)
         claims = query.order_by(ClaimHistory.created_at.desc()).all()
-        return [
+        result = [
             {
                 "claim_id": c.claim_id,
                 "member_id": c.member_id,
@@ -48,12 +53,15 @@ def get_history(member_id: str = ""):
                 "trace": c.trace
             } for c in claims
         ]
-    finally:
         db.close()
+        return result
+    except Exception as e:
+        print(f"⚠️  Database History Error: {e}")
+        return []
 
 def save_claim(claim_data: dict, trace_data: dict):
-    db = SessionLocal()
     try:
+        db = SessionLocal()
         new_claim = ClaimHistory(
             claim_id=claim_data["claim_id"],
             member_id=claim_data["member_id"],
@@ -64,5 +72,8 @@ def save_claim(claim_data: dict, trace_data: dict):
         )
         db.add(new_claim)
         db.commit()
-    finally:
         db.close()
+        print(f"✅ Claim {claim_data['claim_id']} saved to database.")
+    except Exception as e:
+        print(f"⚠️  Database Save Error: {e}")
+        # We don't raise the error so the user still gets their claim result
