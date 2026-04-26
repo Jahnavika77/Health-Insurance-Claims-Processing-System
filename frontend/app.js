@@ -1,6 +1,7 @@
 const API_BASE = "http://localhost:8000";
 let selectedFiles = [];
-let pipelineInterval;
+let pipelinePollInterval;
+const AGENT_STEP_COUNT = 5;
 
 // Navigation
 function showSection(sectionId) {
@@ -73,6 +74,26 @@ function toggleTrace(rowId) {
     el.style.display = el.style.display === 'none' ? 'table-row' : 'none';
 }
 
+function getPipelineSteps() {
+    return Array.from({ length: AGENT_STEP_COUNT }, (_, idx) =>
+        document.getElementById(`step-${idx + 1}`)
+    );
+}
+
+function setActiveProcessingStep(steps, activeIdx) {
+    steps.forEach((step, idx) => {
+        step.classList.remove('processing');
+        if (!step.classList.contains('completed')) {
+            step.style.opacity = idx === activeIdx ? '1' : '0.3';
+        }
+    });
+
+    if (activeIdx >= 0 && activeIdx < steps.length) {
+        steps[activeIdx].classList.add('processing');
+        steps[activeIdx].style.opacity = '1';
+    }
+}
+
 // Submission & Pipeline
 async function submitClaim() {
     const memberId = document.getElementById('member-id').value;
@@ -89,25 +110,19 @@ async function submitClaim() {
     document.getElementById('pipeline-result').style.display = 'block';
     document.getElementById('final-verdict').style.display = 'none';
 
-    const steps = [1,2,3,4,5].map(i => document.getElementById(`step-${i}`));
+    // Clear any previous intervals to prevent multiple animations
+    if (pipelinePollInterval) clearInterval(pipelinePollInterval);
+
+    const steps = getPipelineSteps();
     steps.forEach(s => {
         s.classList.remove('completed', 'processing');
-        s.style.opacity = '1';
+        s.style.opacity = '0.3'; // Dim by default
         s.style.borderColor = 'var(--border)';
+        s.style.borderWidth = '1px';
     });
 
-    // Start simulation
-    let current = 0;
-    pipelineInterval = setInterval(() => {
-        if (current < 5) {
-            steps[current].classList.add('processing');
-            if (current > 0) {
-                steps[current-1].classList.remove('processing');
-                steps[current-1].classList.add('completed');
-            }
-            current++;
-        }
-    }, 3000);
+    // Start from the first agent while backend job begins.
+    setActiveProcessingStep(steps, 0);
 
     const formData = new FormData();
     formData.append('member_id', memberId);
@@ -118,23 +133,63 @@ async function submitClaim() {
 
     try {
         const response = await fetch(`${API_BASE}/submit-claim`, { method: 'POST', body: formData });
-        const result = await response.json();
-        
-        clearInterval(pipelineInterval);
+        const startResult = await response.json();
 
-        if (result.status === "VALIDATION_FAILED") {
-            handleError(result.error_message, result.failed_step);
-        } else {
-            steps.forEach(s => { s.classList.remove('processing'); s.classList.add('completed'); });
-            displayVerdict(result);
+        if (startResult.status !== "ACCEPTED" || !startResult.job_id) {
+            handleError("Unable to start pipeline job.", 0);
+            return;
         }
+
+        let polling = false;
+        pipelinePollInterval = setInterval(async () => {
+            if (polling) return;
+            polling = true;
+
+            try {
+                const statusRes = await fetch(`${API_BASE}/claim-status/${startResult.job_id}`);
+                const job = await statusRes.json();
+
+                if (job.status === "RUNNING") {
+                    const currentStep = Number.isInteger(job.current_step) ? job.current_step : 0;
+
+                    steps.forEach((step, idx) => {
+                        step.classList.remove('completed');
+                        if (idx < currentStep) {
+                            step.classList.add('completed');
+                            step.style.opacity = '1';
+                        }
+                    });
+                    setActiveProcessingStep(steps, currentStep);
+                } else if (job.status === "SUCCESS") {
+                    clearInterval(pipelinePollInterval);
+                    steps.forEach(s => {
+                        s.classList.remove('processing');
+                        s.classList.add('completed');
+                        s.style.opacity = '1';
+                    });
+                    displayVerdict(job.result);
+                } else if (job.status === "FAILED") {
+                    clearInterval(pipelinePollInterval);
+                    const failedStep = job.result?.failed_step ?? 0;
+                    const errorMessage = job.result?.error_message || "Pipeline failed.";
+                    handleError(errorMessage, failedStep);
+                }
+            } catch (pollErr) {
+                clearInterval(pipelinePollInterval);
+                handleError("Connection to AI Pipeline failed.", 0);
+            } finally {
+                polling = false;
+            }
+        }, 500);
     } catch (err) {
-        clearInterval(pipelineInterval);
+        if (pipelinePollInterval) clearInterval(pipelinePollInterval);
         handleError("Connection to AI Pipeline failed.", 0);
     }
 }
 
 function handleError(msg, failedStepIdx) {
+    if (pipelinePollInterval) clearInterval(pipelinePollInterval);
+
     const originalTexts = [
         "1. OCR & Validation (Agent 1)",
         "2. Document Parsing (Agent 2)",
@@ -142,7 +197,7 @@ function handleError(msg, failedStepIdx) {
         "4. Fraud Detection (Agent 4)",
         "5. Final Decision (Agent 5)"
     ];
-    const steps = [1,2,3,4,5].map(i => document.getElementById(`step-${i}`));
+    const steps = getPipelineSteps();
     
     // Reset and process steps
     steps.forEach((s, idx) => {
