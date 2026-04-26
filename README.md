@@ -108,19 +108,6 @@ Health-Insurance-Claims-Processing-System/
     └── style.css
 ```
 
----
-
-## 🧪 Testing
-
-The system has been evaluated against all 12 test cases from `test_cases.json`:
-
-| Result | Count | Cases |
-|--------|-------|-------|
-| ✅ Full Pass | 5 | TC001, TC005, TC007, TC012, TC004* |
-| ⚠️ Partial | 5 | TC002, TC003, TC009, TC010, TC011 |
-| ❌ Fail | 2 | TC006, TC008 |
-
-See [EVAL_REPORT.md](./EVAL_REPORT.md) for detailed analysis of each case.
 
 ---
 
